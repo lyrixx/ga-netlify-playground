@@ -2,6 +2,9 @@ name: Build and Deploy to Netlify
 
 on:
   push:
+    branches:
+      - main
+      - prod
   pull_request:
 
 jobs:
@@ -10,17 +13,32 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: debug
+        run: |
+          echo '${{ github.event_name	}}'
+          echo "::group::github"
+          echo '${{ toJson(github) }}'
+          echo "::endgroup::"
+
+      - name: Determine the environment
+        id: environment
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "::set-output name=environment::${{ github.ref }}"
+          else
+            echo "::set-output name=environment::pr-${{ github.event.number }}"
+          fi
+
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v1.2
         with:
           publish-dir: './build'
           production-branch: main
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Deploy from GitHub Actions"
           enable-pull-request-comment: false
-          enable-commit-comment: true
-          overwrites-pull-request-comment: true
+          enable-commit-comment: false
+          overwrites-pull-request-comment: false
+          github-deployment-environment: ${{ steps.environment.outputs.environment }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        timeout-minutes: 1
