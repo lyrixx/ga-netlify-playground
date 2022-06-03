@@ -24,8 +24,8 @@ jobs:
         id: environment
         run: |
           if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "::set-output name=environment::${{ github.ref }}"
-          else
+            echo "::set-output name=environment::${{ github.ref_name }}"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "::set-output name=environment::pr-${{ github.event.number }}"
           fi
 
@@ -33,7 +33,7 @@ jobs:
         uses: nwtgck/actions-netlify@v1.2
         with:
           publish-dir: './build'
-          production-branch: main
+          production-branch: prod
           github-token: ${{ secrets.GITHUB_TOKEN }}
           enable-pull-request-comment: false
           enable-commit-comment: false
@@ -42,3 +42,4 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        if: ${{ steps.environment.outputs.environment }}
