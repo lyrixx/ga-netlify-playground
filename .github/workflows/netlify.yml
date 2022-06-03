@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - prod
   pull_request:
 
 jobs:
@@ -11,6 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: debug
+        run: |
+          echo '${{ github.event_name	}}'
+          echo "::group::github"
+          echo '${{ toJson(github) }}'
+          echo "::endgroup::"
+
+      - name: Determine the environment
+        id: environment
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "::set-output name=environment::${{ github.ref }}"
+          else
+            echo "::set-output name=environment::pr-${{ github.event.number }}"
+          fi
 
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v1.2
@@ -21,7 +38,7 @@ jobs:
           enable-pull-request-comment: false
           enable-commit-comment: false
           overwrites-pull-request-comment: false
+          github-deployment-environment: ${{ steps.environment.outputs.environment }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        timeout-minutes: 1
